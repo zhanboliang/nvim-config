@@ -100,6 +100,26 @@ return {
 					hint = { enable = true, arrayIndex = "Disable", setType = true },
 				},
 			},
+			taplo = {
+				evenBetterToml = {
+					schema = {
+						enabled = true,
+						-- 不用在线 catalogs (网络慢会触发 LSP timeout 警告),
+						-- 改用本地下载好的 schema. 重新拉:
+						--   curl -sSL -o ~/.config/nvim/schemas/cargo.json https://json.schemastore.org/cargo.json
+						catalogs = {},
+						associations = {
+							["Cargo\\.toml$"] = "file:///Users/liangzhanbo/.config/nvim/schemas/cargo.json",
+							["pyproject\\.toml$"] = "file:///Users/liangzhanbo/.config/nvim/schemas/pyproject.json",
+						},
+						cache = {
+							memoryExpiration = 60,
+							diskExpiration = 600,
+						},
+					},
+					formatter = { alignEntries = false },
+				},
+			},
 		}
 
 		local servers = {
@@ -110,6 +130,7 @@ return {
 			"jsonls",
 			"lua_ls",
 			"zls",
+			"taplo",
 		}
 
 		for _, server in ipairs(servers) do

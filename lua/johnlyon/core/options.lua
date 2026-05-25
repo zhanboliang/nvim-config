@@ -7,6 +7,13 @@ vim.g.loaded_perl_provider = 0
 vim.g.loaded_ruby_provider = 0
 vim.g.loaded_node_provider = 0
 
+-- 兼容 shim：nvim-lsp-file-operations 等老插件还在调 vim.lsp.get_active_clients(),
+-- nvim 0.10+ 已 deprecate 并每次刷红色警告。直接转发到 get_clients,屏蔽警告。
+-- 上游修了之后可以删。
+if vim.lsp and vim.lsp.get_clients then
+	vim.lsp.get_active_clients = vim.lsp.get_clients
+end
+
 -- line numbers
 opt.relativenumber = true -- show relative line numbers
 opt.number = true -- shows absolute line number on cursor line (when relative number is on)

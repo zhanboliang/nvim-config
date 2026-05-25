@@ -30,6 +30,7 @@ return {
         "gitignore",
         "query",
         "zig",
+        "toml",
       }
 
       require("nvim-treesitter").setup({

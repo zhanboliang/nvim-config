@@ -46,6 +46,7 @@ return {
 			"jsonls",
 			"lua_ls",
 			"zls",
+			"taplo",
 		}
 
 		local mason_packages = {
@@ -56,12 +57,17 @@ return {
 			"json-lsp",
 			"lua-language-server",
 			"zls",
+			"taplo",
 			"stylua",
 			"black",
 			"isort",
 			"pylint",
 			"eslint_d",
 			"prettier",
+			-- 新机器零配置 —— fzf-lua 依赖这俩 CLI, 之前每次手动 brew install 容易忘.
+			-- mason 会把它们装到 ~/.local/share/nvim/mason/bin/, nvim 启动时已经把这个目录加进 PATH.
+			"fd",
+			"ripgrep",
 		}
 
 		mason_lspconfig.setup({
