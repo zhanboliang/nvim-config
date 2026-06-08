@@ -10,7 +10,7 @@ return {
       typescript = { "eslint_d" },
       javascriptreact = { "eslint_d" },
       typescriptreact = { "eslint_d" },
-      python = { "pylint" },
+      python = { "ruff" },
     }
 
     -- 只跑「可执行文件已安装」的 linter —— 否则某个 linter 没装时,每次进 buffer / 保存

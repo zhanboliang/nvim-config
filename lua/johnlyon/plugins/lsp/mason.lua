@@ -61,7 +61,6 @@ return {
 			"stylua",
 			"black",
 			"isort",
-			"pylint",
 			"eslint_d",
 			"prettier",
 			-- 注：fd / ripgrep 不放这里 —— mason 仓库没有这两个包(会报
