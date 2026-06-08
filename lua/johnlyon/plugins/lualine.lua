@@ -81,34 +81,15 @@ return {
     })
 
     -- 显式 filetype -> { icon, color } 徽章表
-    -- 图标用 Devicons 私用区码点的 UTF-8 字节序列（避免拷贝时丢失）
-    -- color 字段保留备用（当前不应用）
-    local lang_badges = {
-      zig        = { icon = "\xee\x9a\xa9", color = "#F69A1B" }, -- U+E6A9 devicon-zig
-      rust       = { icon = "\xee\x9a\x8b", color = "#DEA584" }, -- U+E68B devicon-rust
-      go         = { icon = "\xee\x98\xa7", color = "#519ABA" }, -- U+E627
-      typescript = { icon = "\xee\x98\xa8", color = "#519ABA" }, -- U+E628
-      javascript = { icon = "\xee\x98\x8c", color = "#CBCB41" }, -- U+E60C
-      python     = { icon = "\xee\x98\x86", color = "#FFE873" }, -- U+E606
-      java       = { icon = "\xee\x9c\xb8", color = "#CC3E44" }, -- U+E738
-      kotlin     = { icon = "\xee\x98\xb4", color = "#7F52FF" }, -- U+E634
-      ruby       = { icon = "\xee\x9e\x91", color = "#701516" }, -- U+E791
-      php        = { icon = "\xee\x98\x88", color = "#A074C4" }, -- U+E608
-      swift      = { icon = "\xee\x9d\x95", color = "#E37933" }, -- U+E755
-      dart       = { icon = "\xee\x9e\x98", color = "#03589C" }, -- U+E798
-      elixir     = { icon = "\xee\x98\xad", color = "#A074C4" }, -- U+E62D
-      scala      = { icon = "\xee\x9c\xb7", color = "#CC3E44" }, -- U+E737
-      haskell    = { icon = "\xee\x98\x9f", color = "#A074C4" }, -- U+E61F
-      cpp        = { icon = "\xee\x98\x9d", color = "#519ABA" }, -- U+E61D
-      c          = { icon = "\xee\x98\x9e", color = "#599EFF" }, -- U+E61E
-    }
-
-    -- 图标组件
-    local function project_icon()
-      local ft = detect_project()
-      local b = ft and lang_badges[ft]
-      return b and b.icon or ""
-    end
+    -- 语言图标 / 颜色不再手写 Nerd Font 码点(裸码点会随字体版本被重映射 → 指到旧字形变丑),
+    -- 改成运行时从 nvim-web-devicons 按检测到的项目 filetype 取,跟着字体 / devicons 升级自动更新。
+    --
+    -- 唯一例外:Rust。devicons 给 .rs 用的也是 U+E68B(nf-dev-rust),老槽位渲染成发糊的齿轮;
+    -- 只把【字形】覆盖成清晰的 nf-md-language_rust(U+F1617),【颜色等其它字段沿用 devicons
+    -- 自己分配的】——读出 devicons 原本的 .rs 配置、只改 icon 一项回写,不写死任何颜色。
+    local rs_cfg = vim.tbl_extend("force", {}, devicons.get_icons_by_extension()["rs"] or {})
+    rs_cfg.icon = "\u{f1617}"
+    devicons.set_icon({ rs = rs_cfg })
 
     -- 按品牌色亮度自动选深/浅文字,保证 badge 上的字在任何语言色块上都清晰可读。
     local function readable_fg(hex)
@@ -119,22 +100,33 @@ return {
       return lum > 140 and "#11121a" or "#e8e8e8"
     end
 
-    -- 实底 badge：bg 用语言品牌色(故意不跟随主题——一眼认出在写什么语言),
-    -- fg 自动取深/浅,保证文字可读。
+    -- 图标组件:字形从 devicons 按检测到的项目 ft 取(devicons 认不出就不显示)
+    local function project_icon()
+      local ft = detect_project()
+      if not ft or ft == "" then return "" end
+      local glyph = devicons.get_icon_by_filetype(ft, { default = false })
+      return glyph or ""
+    end
+
+    -- 实底 badge：bg 用 devicons 的语言品牌色(故意不跟随主题——一眼认出在写什么语言),
+    -- fg 按亮度自动取深/浅保证可读。颜色也从 devicons 取,不再手写。
     local badge_color_cache = {}
     local function project_badge_color()
       local ft = detect_project()
-      local b = ft and lang_badges[ft]
-      if not b then return {} end
+      if not ft or ft == "" then return {} end
       if badge_color_cache[ft] then return badge_color_cache[ft] end
-      badge_color_cache[ft] = { fg = readable_fg(b.color), bg = b.color, gui = "bold" }
-      return badge_color_cache[ft]
+      local _, color = devicons.get_icon_colors_by_filetype(ft, { strict = false, default = false })
+      if not color then return {} end
+      local c = { fg = readable_fg(color), bg = color, gui = "bold" }
+      badge_color_cache[ft] = c
+      return c
     end
 
-    -- 文件类型名（共用 badge 背景）；只对已知语言显示，未知 filetype 不显示裸文字
+    -- 文件类型名(共用 badge 背景);只对 devicons 认识的语言显示
     local function project_ft()
       local ft = detect_project()
-      return (ft and lang_badges[ft]) and ft or ""
+      if not ft or ft == "" then return "" end
+      return devicons.get_icon_name_by_filetype(ft) and ft or ""
     end
 
     lualine.setup({
