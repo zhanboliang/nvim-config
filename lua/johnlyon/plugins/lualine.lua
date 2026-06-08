@@ -6,74 +6,6 @@ return {
     local lualine = require("lualine")
     local lazy_status = require("lazy.status")
 
-    local colors = {
-      orange      = "#CE422B",
-      insert      = "#E8845A",
-      violet      = "#7A4E3E",
-      yellow      = "#FABB3E",
-      red         = "#A0522D",
-      fg          = "#E8DDD4",
-      bg          = "#1C0F0A",
-      inactive_bg = "#1d1714",
-      inactive_fg = "#7b818c",
-      location_bg = "#3D1F14",
-      location_fg = "#E8DDD4",
-    }
-
-    local fixed_z = { bg = colors.location_bg, fg = colors.location_fg, gui = "bold" }
-    local fixed_y = { bg = "#2a1810", fg = colors.yellow }
-
-    local my_lualine_theme = {
-      normal = {
-        a = { bg = colors.orange, fg = colors.bg, gui = "bold" },
-        b = { bg = colors.bg, fg = colors.fg },
-        c = { bg = colors.bg, fg = colors.fg },
-        x = { bg = colors.bg, fg = colors.fg },
-        y = fixed_y,
-        z = fixed_z,
-      },
-      insert = {
-        a = { bg = colors.insert, fg = colors.bg, gui = "bold" },
-        b = { bg = colors.bg, fg = colors.fg },
-        c = { bg = colors.bg, fg = colors.fg },
-        x = { bg = colors.bg, fg = colors.fg },
-        y = fixed_y,
-        z = fixed_z,
-      },
-      visual = {
-        a = { bg = colors.violet, fg = colors.fg, gui = "bold" },
-        b = { bg = colors.bg, fg = colors.fg },
-        c = { bg = colors.bg, fg = colors.fg },
-        x = { bg = colors.bg, fg = colors.fg },
-        y = fixed_y,
-        z = fixed_z,
-      },
-      command = {
-        a = { bg = colors.yellow, fg = colors.bg, gui = "bold" },
-        b = { bg = colors.bg, fg = colors.fg },
-        c = { bg = colors.bg, fg = colors.fg },
-        x = { bg = colors.bg, fg = colors.fg },
-        y = fixed_y,
-        z = fixed_z,
-      },
-      replace = {
-        a = { bg = colors.red, fg = colors.fg, gui = "bold" },
-        b = { bg = colors.bg, fg = colors.fg },
-        c = { bg = colors.bg, fg = colors.fg },
-        x = { bg = colors.bg, fg = colors.fg },
-        y = fixed_y,
-        z = fixed_z,
-      },
-      inactive = {
-        a = { bg = colors.inactive_bg, fg = colors.inactive_fg, gui = "bold" },
-        b = { bg = colors.inactive_bg, fg = colors.inactive_fg },
-        c = { bg = colors.inactive_bg, fg = colors.inactive_fg },
-        x = { bg = colors.inactive_bg, fg = colors.inactive_fg },
-        y = { bg = colors.inactive_bg, fg = colors.inactive_fg },
-        z = { bg = colors.inactive_bg, fg = colors.inactive_fg },
-      },
-    }
-
     local devicons = require("nvim-web-devicons")
 
     -- 项目标记 -> 语言信息（按优先级；前面的优先匹配）
@@ -171,20 +103,6 @@ return {
       c          = { icon = "\xee\x98\x9e", color = "#599EFF" }, -- U+E61E
     }
 
-    -- 颜色混合（模拟 alpha 透明度）：把 hex_fg 按 alpha 比例混进 hex_bg
-    -- alpha 0.0=完全暗背景, 1.0=纯品牌色, 0.25=轻染色
-    local function blend(hex_fg, hex_bg, alpha)
-      local function parse(h)
-        return tonumber(h:sub(2, 3), 16), tonumber(h:sub(4, 5), 16), tonumber(h:sub(6, 7), 16)
-      end
-      local r1, g1, b1 = parse(hex_fg)
-      local r2, g2, b2 = parse(hex_bg)
-      local r = math.floor(r1 * alpha + r2 * (1 - alpha) + 0.5)
-      local g = math.floor(g1 * alpha + g2 * (1 - alpha) + 0.5)
-      local bb = math.floor(b1 * alpha + b2 * (1 - alpha) + 0.5)
-      return string.format("#%02X%02X%02X", r, g, bb)
-    end
-
     -- 图标组件
     local function project_icon()
       local ft = detect_project()
@@ -192,16 +110,24 @@ return {
       return b and b.icon or ""
     end
 
-    -- 实底 badge：bg 用品牌色、fg 用暗底色 → 一眼可见（比原来 25% 轻染色更显眼）。
-    -- 想换回轻染色版本，把下面那行改成：
-    --   badge_color_cache[ft] = { fg = b.color, bg = blend(b.color, colors.bg, 0.25), gui = "bold" }
+    -- 按品牌色亮度自动选深/浅文字,保证 badge 上的字在任何语言色块上都清晰可读。
+    local function readable_fg(hex)
+      local r = tonumber(hex:sub(2, 3), 16)
+      local g = tonumber(hex:sub(4, 5), 16)
+      local b = tonumber(hex:sub(6, 7), 16)
+      local lum = 0.299 * r + 0.587 * g + 0.114 * b
+      return lum > 140 and "#11121a" or "#e8e8e8"
+    end
+
+    -- 实底 badge：bg 用语言品牌色(故意不跟随主题——一眼认出在写什么语言),
+    -- fg 自动取深/浅,保证文字可读。
     local badge_color_cache = {}
     local function project_badge_color()
       local ft = detect_project()
       local b = ft and lang_badges[ft]
       if not b then return {} end
       if badge_color_cache[ft] then return badge_color_cache[ft] end
-      badge_color_cache[ft] = { fg = colors.bg, bg = b.color, gui = "bold" }
+      badge_color_cache[ft] = { fg = readable_fg(b.color), bg = b.color, gui = "bold" }
       return badge_color_cache[ft]
     end
 
@@ -213,7 +139,9 @@ return {
 
     lualine.setup({
       options = {
-        theme = my_lualine_theme,
+        -- "auto"：模式色块 + 底栏背景都从当前 colorscheme 生成,换主题自动跟随,
+        -- 不再写死暖色。语言徽章(lualine_b)仍用品牌色,见 project_badge_color。
+        theme = "auto",
         globalstatus = true,
         section_separators = { left = "", right = "" },
         component_separators = { left = "│", right = "│" },
@@ -246,7 +174,6 @@ return {
         lualine_y = {
           {
             "diagnostics",
-            color = { bg = colors.bg },
             symbols = { error = "E", warn = "W", info = "I", hint = "H" },
           },
           { "progress" },
@@ -256,8 +183,5 @@ return {
         },
       },
     })
-
-    vim.api.nvim_set_hl(0, "StatusLine", { bg = colors.bg, fg = colors.fg })
-    vim.api.nvim_set_hl(0, "StatusLineNC", { bg = colors.inactive_bg, fg = colors.inactive_fg })
   end,
 }

@@ -64,10 +64,9 @@ return {
 			"pylint",
 			"eslint_d",
 			"prettier",
-			-- 新机器零配置 —— fzf-lua 依赖这俩 CLI, 之前每次手动 brew install 容易忘.
-			-- mason 会把它们装到 ~/.local/share/nvim/mason/bin/, nvim 启动时已经把这个目录加进 PATH.
-			"fd",
-			"ripgrep",
+			-- 注：fd / ripgrep 不放这里 —— mason 仓库没有这两个包(会报
+			-- "Cannot find package fd")。它们是通用 CLI,交给 Homebrew 装即可
+			-- (brew install fd ripgrep);fzf-lua 会自动用系统 PATH 里的版本。
 		}
 
 		mason_lspconfig.setup({

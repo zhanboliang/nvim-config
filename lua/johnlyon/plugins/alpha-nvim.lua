@@ -35,23 +35,17 @@ return {
 		-- Disable folding on alpha buffer
 		vim.cmd([[autocmd FileType alpha setlocal nofoldenable]])
 
-		-- 启动布局：左树 + 右 dashboard / 文件
-		-- 触发场景：
-		--   `nvim`        → alpha 自动显示，追加打开 nvim-tree
-		--   `nvim .`      → cd 进目录，启动 alpha，删掉空的目录 buffer，再开 nvim-tree
-		--   `nvim foo.rs` → 打开文件，并在左侧补一棵 nvim-tree
+		-- 启动布局：不再自动打开 nvim-tree（任何启动方式都不开）。
+		-- 需要文件树时用 <leader>ee 手动开,或 dashboard 上的 "SPC ee" 按钮。
+		-- 这里只负责让 `nvim .`(用目录启动)显示 dashboard:
+		--   `nvim`        → alpha 自动显示(alpha 自带,无需在此处理)
+		--   `nvim .`      → cd 进目录 + 显示 dashboard + 清掉空的目录 buffer
+		--   `nvim foo.rs` → 正常打开文件
 		vim.api.nvim_create_autocmd("VimEnter", {
 			group = vim.api.nvim_create_augroup("johnlyon_startup_layout", { clear = true }),
 			callback = function()
 				local args = vim.fn.argv()
-
-				local should_layout = false
-
-				if #args == 0 then
-					-- nvim 无参：alpha 已自动显示，仅需追加 tree
-					should_layout = true
-				elseif #args == 1 and vim.fn.isdirectory(args[1]) == 1 then
-					-- nvim <dir>：cd 进去，启动 alpha，清理掉那个空的目录 buffer
+				if #args == 1 and vim.fn.isdirectory(args[1]) == 1 then
 					vim.cmd("cd " .. vim.fn.fnameescape(args[1]))
 					vim.cmd("enew")
 					alpha.start(false)
@@ -64,21 +58,6 @@ return {
 							end
 						end
 					end
-					should_layout = true
-				else
-					-- nvim <file> [file...]：文件已打开并聚焦，只在左侧补一棵 tree，
-					-- focus=false 让光标留在文件上。
-					should_layout = true
-				end
-
-				if should_layout then
-					-- 用 schedule 确保 nvim-tree 已就绪；focus=false 让光标停在 dashboard 上
-					vim.schedule(function()
-						local ok, api = pcall(require, "nvim-tree.api")
-						if ok then
-							api.tree.open({ focus = false })
-						end
-					end)
 				end
 			end,
 		})

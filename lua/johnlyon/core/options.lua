@@ -189,3 +189,56 @@ do
     return original(err, result, ctx)
   end
 end
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 窗口可见性 —— 分清「哪个窗口活动 / 边界在哪」。三层叠加,全跟随主题、不用粗字符。
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- ① 分隔线:细单线 box-drawing 字符(fillchars 是全局选项,不被 :colorscheme 重置)
+vim.opt.fillchars:append({
+  vert = "│", horiz = "─", horizup = "┴", horizdown = "┬",
+  vertleft = "┤", vertright = "├", verthoriz = "┼",
+})
+-- WinSeparator 默认近似窗口背景 → 看不见。link 到 Comment:每个主题都把 Comment 定义成
+-- 「可见但克制」的灰,自动跟随明/暗主题,无需写死颜色。(:colorscheme 会重置高亮,见下方 autocmd)
+local function fix_winsep()
+  vim.api.nvim_set_hl(0, "WinSeparator", { link = "Comment" })
+end
+fix_winsep()
+
+-- ② 光标行只在「活动窗口」亮 —— 标出焦点在哪个窗口。CursorLine 由主题自带,自动跟随。
+local cl_group = vim.api.nvim_create_augroup("johnlyon_active_cursorline", { clear = true })
+vim.api.nvim_create_autocmd({ "WinEnter", "BufWinEnter" }, {
+  group = cl_group,
+  callback = function() vim.wo.cursorline = true end,
+})
+vim.api.nvim_create_autocmd("WinLeave", {
+  group = cl_group,
+  callback = function() vim.wo.cursorline = false end,
+})
+
+-- ③ 非活动窗口背景轻微变暗 —— 只动【背景】、不动语法前景色,左右对比看代码仍清晰。
+local dim_amount = 0.06 -- 背景压暗比例;想更明显调大(如 0.10),想更淡调小
+
+local function apply_normalnc()
+  local normal = vim.api.nvim_get_hl(0, { name = "Normal" })
+  if not normal.bg then -- 透明主题:没有背景可压暗
+    vim.api.nvim_set_hl(0, "NormalNC", { link = "Normal" })
+    return
+  end
+  local bg = normal.bg
+  local r = math.floor((math.floor(bg / 65536) % 256) * (1 - dim_amount))
+  local g = math.floor((math.floor(bg / 256) % 256) * (1 - dim_amount))
+  local b = math.floor((bg % 256) * (1 - dim_amount))
+  vim.api.nvim_set_hl(0, "NormalNC", { bg = string.format("#%02x%02x%02x", r, g, b) })
+end
+apply_normalnc()
+
+-- 切主题后高亮被重置 → 重新应用 ① 和 ③
+vim.api.nvim_create_autocmd("ColorScheme", {
+  group = vim.api.nvim_create_augroup("johnlyon_win_visibility", { clear = true }),
+  callback = function()
+    fix_winsep()
+    apply_normalnc()
+  end,
+})

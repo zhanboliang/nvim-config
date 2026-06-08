@@ -43,5 +43,18 @@ return {
       },
     })
     vim.keymap.set("n", "<leader>;", require("dropbar.api").pick, { desc = "Dropbar pick mode" })
+
+    -- 统一菜单高亮:dropbar 默认 hover 行 → IncSearch(你主题里是橙)、
+    -- 当前所在项 current-context → PmenuSel(青),两色在菜单里打架、不统一。
+    -- 统一成 PmenuSel(和 cmp 补全 / vim.ui.select 的选中色一致),换主题自动跟随。
+    local function unify_dropbar_hl()
+      vim.api.nvim_set_hl(0, "DropBarMenuHoverEntry", { link = "PmenuSel" })
+      vim.api.nvim_set_hl(0, "DropBarMenuCurrentContext", { link = "PmenuSel" })
+    end
+    unify_dropbar_hl()
+    vim.api.nvim_create_autocmd("ColorScheme", {
+      group = vim.api.nvim_create_augroup("johnlyon_dropbar_hl", { clear = true }),
+      callback = unify_dropbar_hl,
+    })
   end,
 }
