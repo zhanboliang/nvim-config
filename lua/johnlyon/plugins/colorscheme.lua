@@ -35,42 +35,15 @@ return {
 		"nyoom-engineering/oxocarbon.nvim",
 		lazy = true,
 	},
-  -- {
-  --   "folke/tokyonight.nvim",
-  --   priority = 1000, -- make sure to load this before all the other start plugins
-  --   config = function()
-  --     local bg = "#011628"
-  --     local bg_dark = "#011423"
-  --     local bg_highlight = "#143652"
-  --     local bg_search = "#0A64AC"
-  --     local bg_visual = "#275378"
-  --     local fg = "#CBE0F0"
-  --     local fg_dark = "#B4D0E9"
-  --     local fg_gutter = "#627E97"
-  --     local border = "#547998"
-  --
-  --     require("tokyonight").setup({
-  --       style = "night",
-  --       on_colors = function(colors)
-  --         colors.bg = bg
-  --         colors.bg_dark = bg_dark
-  --         colors.bg_float = bg_dark
-  --         colors.bg_highlight = bg_highlight
-  --         colors.bg_popup = bg_dark
-  --         colors.bg_search = bg_search
-  --         colors.bg_sidebar = bg_dark
-  --         colors.bg_statusline = bg_dark
-  --         colors.bg_visual = bg_visual
-  --         colors.border = border
-  --         colors.fg = fg
-  --         colors.fg_dark = fg_dark
-  --         colors.fg_float = fg
-  --         colors.fg_gutter = fg_gutter
-  --         colors.fg_sidebar = fg_dark
-  --       end,
-  --     })
-  --     -- load the colorscheme here
-  --     vim.cmd([[colorscheme tokyonight]])
-  --   end,
-  -- },
+	-- tokyonight —— folke 出品的顶流主题。lazy=true：不在启动时加载，
+	-- 只有 <leader>uc 选中它 / 存档里存的就是它时，才由 lazy 按需载入。
+	-- 切换走 colorscheme 命令，会被 core/colorscheme.lua 的存档逻辑记住。
+	{
+		"folke/tokyonight.nvim",
+		lazy = true,
+		opts = {
+			style = "night", -- 可选风格：night(最深) / storm(深) / moon(柔) / day(亮)
+			-- 对应主题名分别是：tokyonight / tokyonight-storm / tokyonight-moon / tokyonight-day
+		},
+	},
 }

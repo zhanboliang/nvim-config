@@ -102,7 +102,7 @@ return {
     vim.keymap.set("n", "<leader>th", bottom_term_toggle,
       { desc = "Toggle bottom terminal (below editor only)" })
 
-    -- 暴露成用户命令，方便外部调用（如 auto-session 恢复后自动开终端）
+    -- 暴露成用户命令，方便外部 / 脚本调用
     vim.api.nvim_create_user_command("BottomTermToggle", bottom_term_toggle,
       { desc = "Toggle the managed bottom terminal" })
 

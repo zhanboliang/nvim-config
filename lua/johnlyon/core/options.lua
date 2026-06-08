@@ -63,22 +63,10 @@ opt.cmdheight = 0
 -- 禁止鼠标拖拽 statusline / 窗口分隔条改变窗口大小
 -- 保留点击与滚轮，仅屏蔽 LeftDrag（这是 Neovim 改窗口尺寸的内建行为）
 -- 注意：双击/三击后再拖拽会触发 <2-LeftDrag>/<3-LeftDrag>，要一并拦住
--- ⚠️ rhs 必须是 <Nop>，不能是 <LeftMouse>：触控板按下基本都有微位移，
---    把 drag 重发成带"漂移坐标"的点击会让 bufferline 的 tab 点击错位 ——
---    要么落到下方的 tree / 编辑器窗口里把焦点带过去，要么破坏掉第一次点击
---    的处理流程，导致"点两次才能切 buffer"和"光标跳到 tree"。
+-- 用 <Nop> 而非 <LeftMouse>：触控板按下基本都有微位移，把 drag 重发成
+-- 带"漂移坐标"的点击反而会让光标乱跳，直接吞掉最干净。
 for _, key in ipairs({ "<LeftDrag>", "<2-LeftDrag>", "<3-LeftDrag>", "<4-LeftDrag>" }) do
   vim.keymap.set({ "n", "i", "v", "c", "t" }, key, "<Nop>", { silent = true })
-end
-
--- 多击归一化为单击：Magic Mouse 触面 / Force Touch 触控板有时会把同一次
--- 物理 click 拆成两次很近的事件，被 vim 识别成 <2-LeftMouse>。bufferline
--- 的 tabline %@ click handler 只监听单击，多击事件不触发它 → 用户体感
--- "点了没反应、要再点一次"。归一化到 <LeftMouse> 让 bufferline 一定收到。
--- 副作用：vim 默认 <2-LeftMouse> 选词、<3-LeftMouse> 选行、<4-LeftMouse>
---        块选 都会失效。如果需要恢复，删掉对应行即可。
-for _, key in ipairs({ "<2-LeftMouse>", "<3-LeftMouse>", "<4-LeftMouse>" }) do
-  vim.keymap.set({ "n", "i", "v", "c", "t" }, key, "<LeftMouse>", { silent = true })
 end
 
 -- 兜底：若 cmdheight 被改（例如鼠标拖底部 statusline 漏过 LeftDrag 拦截），

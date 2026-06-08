@@ -26,7 +26,6 @@ return {
 			dashboard.button("SPC ee", "  > Toggle file explorer", "<cmd>NvimTreeToggle<CR>"),
 			dashboard.button("SPC ff", "󰱼  > Find File", "<cmd>FzfLua files<CR>"),
 			dashboard.button("SPC fs", "  > Find Word", "<cmd>FzfLua live_grep_native<CR>"),
-			dashboard.button("SPC wr", "󰁯  > Restore Session For Current Directory", "<cmd>SessionRestore<CR>"),
 			dashboard.button("q", "  > Quit NVIM", "<cmd>qa<CR>"),
 		}
 
@@ -36,27 +35,15 @@ return {
 		-- Disable folding on alpha buffer
 		vim.cmd([[autocmd FileType alpha setlocal nofoldenable]])
 
-		-- 启动布局：左树 + 右 dashboard
+		-- 启动布局：左树 + 右 dashboard / 文件
 		-- 触发场景：
-		--   `nvim`        → alpha 自动显示（原有行为），我们追加打开 nvim-tree
-		--   `nvim .`      → cd 进目录，手动启动 alpha，删掉空的目录 buffer，再开 nvim-tree
-		--   `nvim foo.rs` → 啥都不做，正常打开文件
+		--   `nvim`        → alpha 自动显示，追加打开 nvim-tree
+		--   `nvim .`      → cd 进目录，启动 alpha，删掉空的目录 buffer，再开 nvim-tree
+		--   `nvim foo.rs` → 打开文件，并在左侧补一棵 nvim-tree
 		vim.api.nvim_create_autocmd("VimEnter", {
 			group = vim.api.nvim_create_augroup("johnlyon_startup_layout", { clear = true }),
 			callback = function()
 				local args = vim.fn.argv()
-
-				-- 守卫：cwd 有保存的 session → 让 auto-session 的 post_restore_cmds 接管 layout。
-				-- 否则 alpha 这里 schedule 的 tree.open() 会和 session 恢复 race，
-				-- 在编辑器单窗口状态下 vsp 出一个孤儿编辑器列（"右侧大黑块"）。
-				if #args == 0 then
-					local cwd = vim.fn.getcwd()
-					local session = vim.fn.stdpath("data") .. "/sessions/"
-						.. cwd:gsub("/", "%%2F") .. ".vim"
-					if vim.fn.filereadable(session) == 1 then
-						return
-					end
-				end
 
 				local should_layout = false
 
@@ -77,6 +64,10 @@ return {
 							end
 						end
 					end
+					should_layout = true
+				else
+					-- nvim <file> [file...]：文件已打开并聚焦，只在左侧补一棵 tree，
+					-- focus=false 让光标留在文件上。
 					should_layout = true
 				end
 

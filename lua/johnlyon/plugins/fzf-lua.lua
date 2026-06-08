@@ -47,6 +47,23 @@ return {
 				flip_columns = 130,
 			},
 		},
+		-- Ctrl+n / Ctrl+p 强制绑成上下移动.
+		-- fzf 里上下默认是 Ctrl+j / Ctrl+k; n/p 在开了 --history 时会被抢去翻历史,
+		-- 这里覆盖回 down/up (deep-merge, 不影响 fzf-lua 其它默认键).
+		keymap = {
+			fzf = {
+				["ctrl-n"] = "down",
+				["ctrl-p"] = "up",
+			},
+		},
+		-- buffers 选择器: 关掉 fzf-lua 默认给当前 buffer 钉的表头 (--header-lines=1).
+		-- 默认 sort_lastused=true + ignore_current_buffer=false 时,当前 buffer 会被
+		-- 冻结成一行不可选的表头; 只开 2 个 buffer 时就只剩 1 个可选条目, 计数器 1/1、
+		-- 上下/Ctrl-n/Ctrl-p 都"动不了"(无处可移). 设为 false 让当前 buffer 也变成
+		-- 普通可选行, 同时保留 MRU(最近使用)排序、不丢任何 buffer.
+		buffers = {
+			fzf_opts = { ["--header-lines"] = false },
+		},
 		-- 装了 fd, fzf-lua 自动用 fd. 这里只覆盖 fd_opts 加自定义排除.
 		files = {
 			fd_opts = "--color=never --type f --hidden --follow "

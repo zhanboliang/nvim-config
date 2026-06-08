@@ -3,6 +3,11 @@ vim.g.mapleader = " "
 
 local keymap = vim.keymap -- for conciseness
 
+-- 把空格的默认行为 (normal/visual 模式下 = 光标右移) 干掉.
+-- 否则当 leader chord 超时, fallback 会让光标乱跳一格.
+-- 这条必须在 mapleader 设完之后, 任何 <leader>xxx 映射之前.
+keymap.set({ "n", "v" }, "<Space>", "<Nop>", { silent = true })
+
 ---------------------
 -- General Keymaps -------------------
 
@@ -123,12 +128,11 @@ keymap.set("n", "L", smart_buffer_switch("bnext"),     { desc = "Go to next buff
 -- 关闭 buffer 的 IDE 风行为：
 --   - 优先把当前窗口切到「左邻」buffer，没有左邻就切到「右邻」
 --   - 都没有 → 关掉后展示 alpha 启动页（不让窗口变空 / tree 撑满）
--- 同时给 bufferline 的 X / 右键复用（见 bufferline.lua），所以挂全局名字。
+-- 挂成全局名字，供 <leader>bx 调用。
 _G.SmartBufferClose = function(target_buf)
   target_buf = target_buf or vim.api.nvim_get_current_buf()
 
   -- 取所有"真文件 buffer"（listed + buftype == ""），按 buffer id 顺序
-  -- 这就是 bufferline 默认的展示顺序
   local bufs = vim.tbl_filter(function(b)
     return vim.api.nvim_buf_is_loaded(b)
        and vim.bo[b].buflisted
@@ -152,7 +156,7 @@ _G.SmartBufferClose = function(target_buf)
 
   -- 当前显示该 buffer 的所有窗口都先切到 replacement（没有就先放个空 buffer）
   -- 同时记一下「编辑器窗口」—— 后面 alpha 兜底要落到这里，而不是当前焦点
-  -- （bufferline 的 X / 右键关 buffer 时，焦点可能在 tree 上）
+  -- （焦点可能在 tree / 终端上）
   local editor_win
   for _, win in ipairs(vim.api.nvim_list_wins()) do
     if vim.api.nvim_win_get_buf(win) == target_buf then
@@ -171,13 +175,8 @@ _G.SmartBufferClose = function(target_buf)
   -- 没有 replacement → 在编辑器窗口展示 alpha 启动页
   -- alpha.start(false) 会无脑灌进 current window，所以先把焦点切过去
   if not replacement then
-    -- 优先用 bufferline.lua init 里跟踪的 vim.g.main_win（最近一次进过的真文件窗口）
-    if not (editor_win and vim.api.nvim_win_is_valid(editor_win))
-       and vim.g.main_win and vim.api.nvim_win_is_valid(vim.g.main_win) then
-      editor_win = vim.g.main_win
-    end
-    -- 兜底：target_buf 不在任何窗口（关 hidden buffer）且 main_win 也无效
-    -- → 在当前 tab 找一个非 tree / 非终端 / 非浮窗的真窗口
+    -- editor_win 只在上面「关 hidden buffer」分支里没设 → 这里兜底：
+    -- 在当前 tab 找一个非 tree / 非终端 / 非浮窗的真窗口，让 alpha 落进去
     if not (editor_win and vim.api.nvim_win_is_valid(editor_win)) then
       for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
         local cfg = vim.api.nvim_win_get_config(win)

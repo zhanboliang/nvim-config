@@ -134,6 +134,11 @@ return {
         end
       end
 
+      -- 没匹配到项目根标记 → 回落到当前 buffer 的 filetype，
+      -- 这样在项目外单独打开一个 .py / .rs 也能显示语言徽章。
+      -- （BufEnter 会让 cwd 缓存失效，切 buffer 时按各自 filetype 重算）
+      if not ft then ft = vim.bo.filetype end
+
       detect_cache = { cwd = cwd, ft = ft, name = name }
       return ft, name
     end
@@ -187,22 +192,23 @@ return {
       return b and b.icon or ""
     end
 
-    -- 半透明 badge：bg 是品牌色 25% 混入暗底，fg 用原始品牌色（亮色字 + 染色暗底）
+    -- 实底 badge：bg 用品牌色、fg 用暗底色 → 一眼可见（比原来 25% 轻染色更显眼）。
+    -- 想换回轻染色版本，把下面那行改成：
+    --   badge_color_cache[ft] = { fg = b.color, bg = blend(b.color, colors.bg, 0.25), gui = "bold" }
     local badge_color_cache = {}
     local function project_badge_color()
       local ft = detect_project()
       local b = ft and lang_badges[ft]
       if not b then return {} end
       if badge_color_cache[ft] then return badge_color_cache[ft] end
-      local tinted_bg = blend(b.color, colors.bg, 0.25)
-      badge_color_cache[ft] = { fg = b.color, bg = tinted_bg, gui = "bold" }
+      badge_color_cache[ft] = { fg = colors.bg, bg = b.color, gui = "bold" }
       return badge_color_cache[ft]
     end
 
-    -- 文件类型名（共用 badge 背景）
+    -- 文件类型名（共用 badge 背景）；只对已知语言显示，未知 filetype 不显示裸文字
     local function project_ft()
       local ft = detect_project()
-      return ft or ""
+      return (ft and lang_badges[ft]) and ft or ""
     end
 
     lualine.setup({
