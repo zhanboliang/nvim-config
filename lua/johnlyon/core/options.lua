@@ -14,6 +14,27 @@ if vim.lsp and vim.lsp.get_clients then
 	vim.lsp.get_active_clients = vim.lsp.get_clients
 end
 
+-- PATH：把 Homebrew 和 mason 的 bin 目录前置进 nvim 的 PATH，让 LSP / 格式化 / lint
+-- 工具能被找到。放这里(而不是 mason 的 config)是为了让 mason 本体纯按命令懒加载 ——
+-- 平时不加载 mason，已装好的工具照样可用。
+do
+	local prepend = { "/opt/homebrew/bin", vim.fn.stdpath("data") .. "/mason/bin" }
+	local seen, entries = {}, {}
+	for _, p in ipairs(prepend) do
+		if vim.fn.isdirectory(p) == 1 and not seen[p] then
+			seen[p] = true
+			table.insert(entries, p)
+		end
+	end
+	for _, p in ipairs(vim.split(vim.env.PATH or "", ":", { plain = true, trimempty = true })) do
+		if not seen[p] then
+			seen[p] = true
+			table.insert(entries, p)
+		end
+	end
+	vim.env.PATH = table.concat(entries, ":")
+end
+
 -- line numbers
 opt.relativenumber = true -- show relative line numbers
 opt.number = true -- shows absolute line number on cursor line (when relative number is on)

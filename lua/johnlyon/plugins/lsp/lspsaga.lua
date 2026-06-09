@@ -51,21 +51,32 @@ return {
       end
     end
 
-    local function smart_scroll(keys, fallback)
+    local function smart_scroll(noice_delta, keys, fallback)
       return function()
+        -- 1) noice 接管的 hover / signature 弹窗(你的 K 文档就是 noice 渲染的)→
+        --    用 noice 自己的滚动 API。这样按【一下】K 之后直接 <C-f>/<C-b> 就能滚文档,
+        --    不用再按一下 K 进浮窗。
+        local ok, scrolled = pcall(function()
+          return require("noice.lsp").scroll(noice_delta)
+        end)
+        if ok and scrolled then
+          return
+        end
+        -- 2) lspsaga / 标准浮窗(含 <leader>d 诊断浮窗)→ 在浮窗里发滚动键
         local win = find_hover_win()
         if win then
           vim.api.nvim_win_call(win, function()
             vim.cmd("normal! " .. keys)
           end)
-        else
-          vim.cmd("normal! " .. fallback)
+          return
         end
+        -- 3) 都没有 → 翻 buffer
+        vim.cmd("normal! " .. fallback)
       end
     end
 
-    -- \x06 = ^F, \x02 = ^B, \x04 = ^D, \x15 = ^U
-    vim.keymap.set("n", "<C-f>", smart_scroll("\x04", "\x06"), { desc = "Scroll hover / page down" })
-    vim.keymap.set("n", "<C-b>", smart_scroll("\x15", "\x02"), { desc = "Scroll hover / page up" })
+    -- \x06 = ^F, \x02 = ^B, \x04 = ^D, \x15 = ^U;noice 用 ±4 行
+    vim.keymap.set("n", "<C-f>", smart_scroll(4, "\x04", "\x06"), { desc = "Scroll hover/doc / page down" })
+    vim.keymap.set("n", "<C-b>", smart_scroll(-4, "\x15", "\x02"), { desc = "Scroll hover/doc / page up" })
   end,
 }

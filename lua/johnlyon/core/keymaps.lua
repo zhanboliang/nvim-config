@@ -18,6 +18,18 @@ keymap.set("t", "jk", [[<C-\><C-n>]], { desc = "Exit terminal mode with jk" })
 -- clear search highlights
 keymap.set("n", "<leader>nh", ":nohl<CR>", { desc = "Clear search highlights" })
 
+-- 新建文件:弹输入框填路径(默认当前文件所在目录、可路径补全),
+-- 自动建好父目录(mkdir -p)再打开并落盘 —— 不用目录树也能建文件。
+keymap.set("n", "<leader>fn", function()
+  local dir = vim.fn.expand("%:p:h")
+  if dir == "" then dir = vim.fn.getcwd() end
+  vim.ui.input({ prompt = "New file: ", default = dir .. "/", completion = "file" }, function(path)
+    if not path or path == "" then return end
+    vim.fn.mkdir(vim.fn.fnamemodify(path, ":h"), "p")
+    vim.cmd("edit " .. vim.fn.fnameescape(path) .. " | write")
+  end)
+end, { desc = "New file (prompt + mkdir)" })
+
 -- delete single character without copying into register
 -- keymap.set("n", "x", '"_x')
 
