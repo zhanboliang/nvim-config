@@ -107,26 +107,53 @@ return {
 				server = {
 					capabilities = capabilities,
 					on_attach = on_attach,
-					default_settings = {
-						["rust-analyzer"] = {
-							inlayHints = {
-								bindingModeHints = { enable = false },
-								chainingHints = { enable = true },
-								closingBraceHints = { enable = true, minLines = 25 },
-								closureReturnTypeHints = { enable = "never" },
-								lifetimeElisionHints = { enable = "never", useParameterNames = false },
-								maxLength = 25,
-								parameterHints = { enable = true },
-								reborrowHints = { enable = "never" },
-								renderColons = true,
-								typeHints = {
-									enable = true,
-									hideClosureInitialization = false,
-									hideNamedConstructor = false,
-								},
+					settings = function(project_root, default_settings)
+						local settings = vim.deepcopy(default_settings or {})
+						local ra = settings["rust-analyzer"] or {}
+
+						ra.procMacro = {
+							enable = true,
+							attributes = { enable = true },
+						}
+
+						ra.cargo = {
+							buildScripts = { enable = true },
+							features = "all",
+						}
+
+						ra.diagnostics = {
+							experimental = { enable = true },
+						}
+
+						ra.inlayHints = {
+							bindingModeHints = { enable = false },
+							chainingHints = { enable = true },
+							closingBraceHints = { enable = true, minLines = 25 },
+							closureReturnTypeHints = { enable = "never" },
+							lifetimeElisionHints = { enable = "never", useParameterNames = false },
+							maxLength = 25,
+							parameterHints = { enable = true },
+							reborrowHints = { enable = "never" },
+							renderColons = true,
+							typeHints = {
+								enable = true,
+								hideClosureInitialization = false,
+								hideNamedConstructor = false,
 							},
-						},
-					},
+						}
+
+						-- 单文件模式：无 Cargo.toml 时将当前文件作为独立项目告知 rust-analyzer
+						local has_cargo = vim.fn.filereadable(project_root .. "/Cargo.toml") == 1
+						if not has_cargo then
+							local current_file = vim.fn.expand("%:p")
+							if current_file:match("%.rs$") then
+								ra.linkedProjects = { current_file }
+							end
+						end
+
+						settings["rust-analyzer"] = ra
+						return settings
+					end,
 				},
 			}
 		end,

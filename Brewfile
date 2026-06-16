@@ -24,6 +24,16 @@ brew "ruff" # Python lint + format(替代了 pylint)
 brew "chafa"       # 终端里直接看图
 brew "imagemagick" # image.nvim 在 nvim 里渲染图片(提供 magick 命令)
 
+# ── 摸鱼:终端听网易云音乐(go-musicfox)──
+# ⚠️ brew 装它要从源码编译,需要【较新的 Xcode 命令行工具】(CLT 旧会报 "too outdated")。
+#    CLT 新的机器:  brew install go-musicfox/go-musicfox/go-musicfox
+#    CLT 旧 / 想省事 → 下预编译二进制(版本号去 releases 页核对):
+#      curl -fsSL -o /tmp/gmf.zip \
+#        https://github.com/go-musicfox/go-musicfox/releases/download/v4.8.5/go-musicfox_4.8.5_darwin_arm64.zip
+#      unzip -o /tmp/gmf.zip -d /tmp/gmf
+#      mkdir -p ~/.local/bin && mv /tmp/gmf/musicfox ~/.local/bin/ && chmod +x ~/.local/bin/musicfox
+#      xattr -dr com.apple.quarantine ~/.local/bin/musicfox   # 去隔离,免得 Gatekeeper 拦
+
 # ════════════════════════════════════════════════════════════════════
 # 下面这些不归 brew 管,新机器还要补 —— 也都不用背,照抄就行:
 #

@@ -30,6 +30,22 @@ keymap.set("n", "<leader>fn", function()
   end)
 end, { desc = "New file (prompt + mkdir)" })
 
+-- 摸鱼:网易云音乐(go-musicfox)在浮动终端里跑。<leader>fmm 开/关。
+-- 切走时进程保留(hidden=true)→ 音乐继续放;退出 nvim 才会停。
+-- 想让音乐脱离 nvim 一直放 → 在 Ghostty 的 quick-terminal(cmd+~)里跑 musicfox。
+local _music_term
+keymap.set("n", "<leader>fmm", function()
+  if not _music_term then
+    _music_term = require("toggleterm.terminal").Terminal:new({
+      cmd = "musicfox",
+      direction = "float",
+      hidden = true,
+      float_opts = { border = "curved" },
+    })
+  end
+  _music_term:toggle()
+end, { desc = "摸鱼: 网易云音乐 (musicfox)" })
+
 -- delete single character without copying into register
 -- keymap.set("n", "x", '"_x')
 
