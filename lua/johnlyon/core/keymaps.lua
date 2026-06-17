@@ -262,6 +262,8 @@ cmd_map("<D-s>", "<cmd>silent! write<CR>", "<Esc><cmd>silent! write<CR>", "<Esc>
 -- Cmd+Z 撤销 / Cmd+Shift+Z 重做
 cmd_map("<D-z>", "u", "<C-o>u", "<Esc>u", "Undo")
 cmd_map("<D-Z>", "<C-r>", "<C-o><C-r>", "<Esc><C-r>", "Redo")
+-- U 重做(覆盖默认的「撤销整行」)
+vim.keymap.set("n", "U", "<C-r>", { desc = "Redo" })
 -- Cmd+C 复制(visual 复制到系统剪贴板)/ Cmd+X 剪切
 cmd_map("<D-c>", nil, nil, '"+y', "Copy to clipboard")
 cmd_map("<D-x>", nil, nil, '"+d', "Cut to clipboard")

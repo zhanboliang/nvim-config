@@ -93,7 +93,7 @@ return {
 				end, opts)
 
 				opts.desc = "Restart LSP"
-				keymap.set("n", "<leader>rs", ":LspRestart<CR>", opts)
+				keymap.set("n", "<leader>rs", ":RustAnalyzer restart<CR>", opts)
 			end
 
 			vim.g.rustaceanvim = {
@@ -114,15 +114,42 @@ return {
 						ra.procMacro = {
 							enable = true,
 							attributes = { enable = true },
+							ignored = {
+								["tracing-attributes"] = { "instrument" },
+								["async-trait"] = { "async_trait" },
+							},
 						}
 
 						ra.cargo = {
 							buildScripts = { enable = true },
-							features = "all",
+							-- 关键性能项:给 RA 单独的 target 子目录(target/rust-analyzer),
+							-- 与终端的 cargo build/run 分开,避免抢同一个文件锁导致互相卡死。
+							targetDir = true,
+							-- 只检查主 target,跳过 tests/benches/examples,大幅减少 check 工作量。
+							-- 如果你需要测试代码也有诊断,把这行删掉。
+							allTargets = false,
 						}
 
+						-- 关掉启动时的缓存预热:多 crate 的 workspace 启动会少占一波 CPU。
+						-- 代价:首次跳转/补全略慢一点点,之后无差别。
+						ra.cachePriming = { enable = false }
+
+						-- 别让 RA 去扫描这些目录,减少文件监听开销。
+						ra.files = {
+							excludeDirs = { ".git", "target", "node_modules" },
+						}
+
+						-- 关掉 rust-analyzer 的「实时」原生诊断:Neovim 0.12 在打字时会
+						-- 打断 proc-macro 展开(#[tokio::main] 等),导致整段函数体级联标红。
+						-- 改为只靠保存时的 cargo check 报错 —— 打字时绝不闪红,保存后才显示真实错误。
 						ra.diagnostics = {
-							experimental = { enable = true },
+							enable = false,
+						}
+
+						-- 保存时跑 cargo check(默认就是开的,这里显式写明)。
+						ra.checkOnSave = true
+						ra.check = {
+							command = "check",
 						}
 
 						ra.inlayHints = {
