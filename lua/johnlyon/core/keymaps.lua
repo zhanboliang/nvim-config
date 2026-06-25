@@ -18,6 +18,26 @@ keymap.set("t", "jk", [[<C-\><C-n>]], { desc = "Exit terminal mode with jk" })
 -- clear search highlights
 keymap.set("n", "<leader>nh", ":nohl<CR>", { desc = "Clear search highlights" })
 
+-- ye: 复制光标所在行的所有诊断(就是气泡弹窗里显示的那些错误)到系统剪贴板
+keymap.set("n", "ye", function()
+  local lnum = vim.api.nvim_win_get_cursor(0)[1] - 1
+  local diags = vim.diagnostic.get(0, { lnum = lnum })
+  if vim.tbl_isempty(diags) then
+    vim.notify("当前行没有诊断信息", vim.log.levels.INFO)
+    return
+  end
+  local lines = {}
+  for _, d in ipairs(diags) do
+    local sev = vim.diagnostic.severity[d.severity] or "INFO"
+    local src = d.source and ("[" .. d.source .. "] ") or ""
+    table.insert(lines, ("%s: %s%s"):format(sev, src, d.message))
+  end
+  local text = table.concat(lines, "\n")
+  vim.fn.setreg("+", text)
+  vim.fn.setreg('"', text)
+  vim.notify(("已复制 %d 条诊断到剪贴板"):format(#diags))
+end, { desc = "Yank line diagnostics to clipboard" })
+
 -- 新建文件:弹输入框填路径(默认当前文件所在目录、可路径补全),
 -- 自动建好父目录(mkdir -p)再打开并落盘 —— 不用目录树也能建文件。
 keymap.set("n", "<leader>fn", function()
